@@ -120,12 +120,15 @@
   </div>
     <div v-if="cart.length > 0" class="block">
       Your total price: $ {{cart_total}}
-      <button class="button is-success" @click="pay()">
+      <button v-if="cart_total > 0 && checkout_state === 'pay'"
+              class="button is-success" @click="pay()">
         <span class="icon is-small">
           <i class="fa fa-credit-card"></i>
         </span>
         <span>Pay</span>
       </button>
+      <button v-if="checkout_state === 'checkout'"
+              class="button is-danger" @click="checkout">Complete Order</button>
     </div>
   </div>
 

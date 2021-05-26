@@ -159,6 +159,11 @@ let init = (app) => {
         }
         axios.get(load_url).then(function (response) {
             app.vue.rows = app.decorate(app.enumerate(response.data.rows));
+            if (response.data.clear_cart) {
+                selv.vue.cart = [];
+                self.update_cart();
+                self.store_cart();
+            }
         });
     };
 

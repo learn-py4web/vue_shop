@@ -14,8 +14,11 @@ let init = (app) => {
         product_search: '',
         cart_size: 0,
         cart_total: 0,
-        page: 'prod' // Page : cart or prod.
+        page: 'prod', // Page : cart or prod.
+        checkout_state: 'pay', // 'pay' or 'checkout'
     };
+
+    app.stripe_session_id = null;
 
     app.enumerate = (a) => {
         // This adds an _idx field to each element of the array.
@@ -108,55 +111,31 @@ let init = (app) => {
 
     app.goto = function (page) {
         app.vue.page = page;
-        if (page == 'cart') {
-            // prepares the form.
-            app.stripe_instance = StripeCheckout.configure({
-                key: 'pk_test_nj0aqiNoiqmy9UDJUILfP6OU00p6Ehzy2d',    //put your own publishable key here
-                image: 'https://stripe.com/img/documentation/checkout/marketplace.png',
-                locale: 'auto',
-                token: function(token, args) {
-                    console.log('got a token. sending data to localhost.');
-                    app.stripe_token = token;
-                    app.customer_info = args;
-                    app.send_data_to_server();
-                }
-            });
-        };
-
     };
 
     app.pay = function () {
-        app.stripe_instance.open({
-            name: "Your nice cart",
-            description: "Buy cart content",
-            billingAddress: true,
-            shippingAddress: true,
-            amount: Math.round(app.vue.cart_total * 100),
-        });
+        items = []
+        for (let p of app.vue.cart) {
+            items.push({
+                product_id: p.id,
+                quantity: p.cart_quantity,
+                unit_price: Math.round(p.price * 100), // Stripe is in cents.
+            });
+        }
+        axios.post(purchase_url, {items: items})
+            .then(function (r) {
+                app.stripe_session_id = r.data.session_id;
+                app.vue.checkout_state = "checkout";
+            });
     };
 
-    app.send_data_to_server = function () {
-        console.log("Payment for:", app.customer_info);
-        // Calls the server.
-        axios.post(purchase_url,
-            {
-                customer_info: JSON.stringify(app.customer_info),
-                transaction_token: JSON.stringify(app.stripe_token),
-                amount: app.vue.cart_total,
-                cart: JSON.stringify(app.vue.cart),
-            })
-            .then(function (response) {
-                if (response.data === "ok") {
-                    // The order was successful.
-                    app.vue.cart = [];
-                    app.update_cart();
-                    app.store_cart();
-                    app.goto('prod');
-                    Q.flash("Payment succeeded");
-                } else {
-                    Q.flash("Payment declined");
-                }
-            });
+    app.checkout = function () {
+        app.vue.checkout_state = "pay";
+        stripe.redirectToCheckout({
+            sessionId: app.stripe_session_id,
+        }).then(function (result) {
+             Q.flash(result.error.message);
+        });
     };
 
     // This contains all the methods.
@@ -164,11 +143,12 @@ let init = (app) => {
         get_products: app.get_products,
         inc_desired_quantity: app.inc_desired_quantity,
         inc_cart_quantity: app.inc_cart_quantity,
-        buy_product: app.buy_product,
         goto: app.goto,
+        buy_product: app.buy_product,
         do_search: app.get_products,
         clear_search: app.clear_search,
         pay: app.pay,
+        checkout: app.checkout,
     };
 
     // This creates the Vue instance.

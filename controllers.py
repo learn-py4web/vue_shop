@@ -52,6 +52,7 @@ def nicefy(b):
 # Reads the stripe keys.
 with open(os.path.join(APP_FOLDER, 'private', 'stripe_keys.json'), 'r') as f:
     STRIPE_KEY_INFO = json.load(f)
+stripe.api_key = STRIPE_KEY_INFO['test_private_key']
 
 @action('index')
 @action.uses(db, url_signer, 'index.html')
@@ -59,6 +60,7 @@ def index():
     return dict(
         products_url = URL('get_products', signer=url_signer),
         purchase_url = URL('purchase', signer=url_signer),
+        clear_cart = request.params.get('clear_cart')
     )
 
 @action('get_products')
@@ -86,29 +88,51 @@ def get_products():
 @action('purchase', method="POST")
 @action.uses(db, url_signer.verify())
 def purchase():
-    stripe.set_app_info('Luca de Alfaro teaching site', version="2.0", url="http://luca.dealfaro.com")
-    # Your secret key.
-    stripe.api_key = STRIPE_KEY_INFO['private_key']
-    token = json.loads(request.params['transaction_token'])
-    amount = float(request.params['amount'])
+    # See https://stripe.com/docs/payments/checkout/migration#api-products
+    items = request.json.get('items')
+    total = 0
+    for it in items:
+        total += it['quantity'] * it['unit_price']
+    assert total > 0
+    # Insert non-paid order (the customer has not checked out yet).
+    order_id = db.customer_order.insert(
+        ordered_items=json.dumps(items),
+        # TODO: normally one would add also customer information.
+    )
+    stripe_session = stripe.checkout.Session.create(
+      payment_method_types=['card'],
+      line_items=[{
+        'price_data': {
+          'product': 'Thank you for your purchase',
+          'unit_amount': total,
+          'currency': 'usd',
+        },
+        'quantity': 1,
+      }],
+      mode='payment',
+      success_url=URL('successful_payment', order_id, signer=url_signer),
+      cancel_url=URL('cancelled_payment', order_id, signer=url_signer),
+    )
+    return dict(session_id=stripe_session.id)
+
+@action('successful_payment/<order_id:int>')
+@action.uses(url_signer.verify())
+def successful_payment(order_id=None):
+    order = db(db.customer_order.id == int(order_id)).select().first()
+    if order is None:
+        redirect(URL('index'))
+    order.paid = True
+    order.update_record()
+    redirect(URL('index', vars=dict(clear_cart='y')))
+
+@action('cancelled_payment/<order_id:int>')
+@action.uses(url_signer.verify())
+def cancelled_payment(order_id=None):
     try:
-        charge = stripe.Charge.create(
-            amount=int(amount * 100),
-            currency="usd",
-            source=token['id'],
-            description="Purchase",
-        )
-        print("The charge was successful")
-    except stripe.error.CardError as e:
-        print("The card has been declined.")
-        traceback.print_exc()
-        return dict(result="nok")
-    # Stores the order.
-    db.customer_order.insert(
-        customer_info=request.vars.customer_info,
-        transaction_token=json.dumps(token),
-        cart=request.vars.cart)
-    return dict(result="ok")
+        db(db.customer_order.id == int(order_id)).delete()
+    except:
+        pass
+    redirect(URL('index'))
 
 @action('view_orders', method=['POST', 'GET'])
 @action('view_orders/<path:path>', method=['POST', 'GET'])
@@ -119,7 +143,6 @@ def view_orders(path=None):
     grid = Grid(path,
                 query=reduce(lambda a, b: (a & b), [db.customer_order.id > 0]),
                 orderby=[db.customer_order.id],
-                search_queries=['Search by Name', lambda val: db.company.name.contains(val)],
                 )
     return dict(grid=grid)
 
