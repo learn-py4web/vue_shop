@@ -12,25 +12,22 @@
   <!-- Top bar -->
   <div class="columns block">
 
-    <div class="column">
+    <div class="column is-three-quarters">
       <div v-if="page=='prod'" class="field">
         <p class="control has-icons-right">
-          <input class="input" v-model="product_search" @keydown="do_search"/>
+          <input class="input" v-model="product_search" @keydown="search_enter"/>
           <span class="icon is-small is-right">
             <i class="fa fa-search"></i>
           </span>
+          <button class="button" @click="clear_search">
+            <span class="icon is-small"><i class="fa fa-times-circle"</span>
+          </button>
         </p>
       </div>
       <span v-if="page=='cart'" class="title"><i class="fa fa-shopping-cart"></i> Your Shopping Cart</span>
     </div>
 
-    <div class="column is-narrow">
-      <button class="button" @click="clear_search">
-        <span class="icon is-small"><i class="fa fa-times-circle"></i></span>
-      </button>
-    </div>
-
-    <div class="column is-narrow">
+    <div class="column is-one-quarter">
       <span v-if="page=='prod'">
         <button class="button is-link" @click="goto('cart')">
           <i class="fa fa-lg fa-shopping-cart"></i> {{cart_size}}
@@ -44,11 +41,11 @@
   </div>
 
   <!-- Main page content: products -->
-  <div class="block" v-if="page==='prod'" id="products_list">
+  <div class="block" v-if="page=='prod'" id="products_list">
     <div v-for="product in products" class="box">
       <div class="columns">
         <div class="column is-one-third">
-          <img :src="product.image_url" width="100%" class="product_image"/>
+          <img v-bind:src="product.image_url" width="100%" class="product_image"/>
         </div>
         <div class="column is-two-thirds">
           <div class="has-text-weight-bold is-size-3">{{product.product_name}}</div>
@@ -64,8 +61,6 @@
                   <i class="fa fa-shopping-cart"></i>
                 </span>
                 <span>Buy</span>
-              </button>
-            </div>
           </div>
           <div class="product_description">
             <p>{{product.description}}</p>
@@ -76,10 +71,10 @@
   </div>
 
   <!-- Main page content: cart -->
-  <div v-if="page==='cart'" class="block">
+  <div v-if="page=='cart'" class="block">
 
     <!-- Cart content -->
-    <div v-if="cart.length === 0" class="container">
+    <div v-if="cart.length == 0" class="container">
       <div>Your cart is empty</div>
     </div>
     <div v-for="product in cart" class="box">
