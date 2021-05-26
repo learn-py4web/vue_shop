@@ -16,7 +16,7 @@ let init = (app) => {
             ['Price', 'price'],
             ['Description', 'description'],
         ],
-        add_fields: null,
+        add_fields: {},
         add_mode: false,
         rows: [],
     };
@@ -43,12 +43,12 @@ let init = (app) => {
         return a;
     }
 
-    app.add_contact = function () {
+    app.add_product = function () {
         msg = {};
         for (f of app.vue.fields) {
             msg[f[1]] = app.vue.add_fields[f[1]];
         }
-        axios.post(add_contact_url, m).then(function (response) {
+        axios.post(add_url, msg).then(function (response) {
             let n = app.vue.rows.length;
             app.vue.rows.push();
             let new_row = msg;
@@ -67,9 +67,9 @@ let init = (app) => {
         }
     };
 
-    app.delete_contact = function(row_idx) {
+    app.delete_product = function(row_idx) {
         let id = app.vue.rows[row_idx].id;
-        axios.get(delete_contact_url, {params: {id: id}}).then(function (response) {
+        axios.get(delete_url, {params: {id: id}}).then(function (response) {
             for (let i = 0; i < app.vue.rows.length; i++) {
                 if (app.vue.rows[i].id === id) {
                     app.vue.rows.splice(i, 1);
@@ -93,7 +93,7 @@ let init = (app) => {
         let row = app.vue.rows[row_idx];
         if (row._state[fn] === "edit") {
             row._state[fn] = "pending";
-            axios.post(edit_contact_url,
+            axios.post(edit_url,
                 {
                     id: row.id,
                     field: fn,
@@ -132,9 +132,9 @@ let init = (app) => {
     // We form the dictionary of all methods, so we can assign them
     // to the Vue app in a single blow.
     app.methods = {
-        add_contact: app.add_contact,
+        add_product: app.add_product,
         set_add_status: app.set_add_status,
-        delete_contact: app.delete_contact,
+        delete_product: app.delete_product,
         start_edit: app.start_edit,
         stop_edit: app.stop_edit,
         upload_file: app.upload_file,
@@ -152,7 +152,10 @@ let init = (app) => {
     // load the data.
     // For the moment, we 'load' the data from a string.
     app.init = () => {
-        axios.get(load_contacts_url).then(function (response) {
+        for (let f of app.vue.fields) {
+            app.vue.add_fields[f[1]] = "";
+        }
+        axios.get(load_url).then(function (response) {
             app.vue.rows = app.decorate(app.enumerate(response.data.rows));
         });
     };

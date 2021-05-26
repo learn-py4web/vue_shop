@@ -182,6 +182,7 @@ let init = (app) => {
     app.init = () => {
         // Put here any initialization code.
         // Typically this is a server GET call to load the data.
+        app.vue.get_products();
     };
 
     // Call to the initializer.

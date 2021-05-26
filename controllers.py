@@ -137,7 +137,7 @@ def manage_products():
 @action('load_products')
 @action.uses(url_signer.verify(), db)
 def load_contacts():
-    rows = db(db.contact).select().as_list()
+    rows = db(db.product).select().as_list()
     return dict(rows=rows)
 
 @action('add_product', method="POST")
