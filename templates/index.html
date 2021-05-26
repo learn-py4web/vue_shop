@@ -13,7 +13,7 @@
   <div class="columns block">
 
     <div class="column">
-      <div v-if="page=='prod'" class="field">
+      <div v-if="page==='prod'" class="field">
         <p class="control has-icons-right">
           <input class="input" v-model="product_search" @keydown="do_search"/>
           <span class="icon is-small is-right">
@@ -25,13 +25,13 @@
     </div>
 
     <div class="column is-narrow">
-      <button class="button" @click="clear_search">
+      <button v-if="page==='prod'" class="button" @click="clear_search">
         <span class="icon is-small"><i class="fa fa-times-circle"></i></span>
       </button>
     </div>
 
     <div class="column is-narrow">
-      <span v-if="page=='prod'">
+      <span v-if="page==='prod'">
         <button class="button is-link" @click="goto('cart')">
           <span class="icon is-small">
             <i class="fa fa-lg fa-shopping-cart"></i>
@@ -39,7 +39,7 @@
           <span>{{cart_size}}</span>
         </button>
       </span>
-      <span v-if="page=='cart'">
+      <span v-if="page==='cart'">
         <button class="button is-success" v-on:click="goto('prod')"> Continue shopping </button>
       </span>
     </div>
@@ -92,18 +92,20 @@
     <div v-for="product in cart" class="box">
       <div class="columns">
 
-        <div class="column is-one-third">
-          <img v-bind:src="product.image_url"/>
+        <div class="column is-one-quarter">
+          <div class="box">
+            <img :src="product.image"/>
+          </div>
         </div>
 
-        <div class="column is-two-thirds">
+        <div class="column is-three-quarters">
           <div class="has-text-weight-bold is-size-3">{{product.product_name}}</div>
           <div class="mt-2">
             <span class="product_price">$ {{product.price}}</span>
             <span class="product_quantity">Quantity in stock: {{product.quantity}}</span>
-            <span class="buttons">
+            <div class="buttons">
               <button class="button" @click="inc_cart_quantity(product._idx, 1)"><i class="fa fa-plus"></i></button>
-              <span class="desired_quantity">{{product.cart_quantity}}</span>
+              <button class="button is-selected is-hoverable">{{product.cart_quantity}}</button>
               <button class="button" @click="inc_cart_quantity(product._idx, -1)"><i class="fa fa-minus"></i></button>
             </span>
           </div>
@@ -114,8 +116,8 @@
 
       </div>
     </div>
-
     <!-- cart pay -->
+  </div>
     <div v-if="cart.length > 0" class="block">
       Your total price: $ {{cart_total}}
       <button class="button is-success" @click="pay()">
@@ -125,7 +127,6 @@
         <span>Pay</span>
       </button>
     </div>
-
   </div>
 
 </div>
