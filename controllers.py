@@ -130,7 +130,7 @@ def manage_products():
         add_url = URL('add_product', signer=url_signer),
         delete_url = URL('delete_product', signer=url_signer),
         edit_url = URL('edit_product', signer=url_signer),
-        upload_url = URL('upload_product', signer=url_signer),
+        upload_url = URL('upload_image', signer=url_signer),
     )
 
 # This is our very first API function.
@@ -168,9 +168,9 @@ def edit_product():
     db(db.product.id == id).update(**{field: value})
     return "ok"
 
-@action('upload_product', method="POST")
+@action('upload_image', method="POST")
 @action.uses(url_signer.verify(), db)
-def upload_product():
+def upload_image():
     product_id = request.json.get("product_id")
     image = request.json.get("image")
     db(db.contact.id == product_id).update(image=image)

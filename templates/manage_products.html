@@ -9,45 +9,35 @@
 <div class="section" id="vue-target" v-cloak>
 
   <div v-if="add_mode" class="container block">
-    <div class="title">Add Contact</div>
+    <div class="title">Add Product</div>
     <div class="form">
-
-      <!-- This looks like a form, but is not.  We just need the inputs. -->
-      <div class="field">
-        <label class="label">First Name:</label>
+      <div v-for="f in fields" class="field">
+        <label class="label">{{f[0]}}:</label>
         <div class="control">
-          <input type="text" v-model="add_first_name" class="input">
-        </div>
-      </div>
-      <div class="field">
-        <label class="label">Last Name:</label>
-        <div class="control">
-          <input type="text" v-model="add_last_name" class="input">
+          <input type="text" v-model="add_fields[f[1]]" class="input">
         </div>
       </div>
       <div class="field">
         <div class="control">
-          <input type="submit" @click="add_contact" value="Add" class="button is-primary">
+          <input type="submit" @click="add_product" value="Add" class="button is-primary">
           <input type="submit" @click="set_add_status(false)" value="Cancel" class="button is-warning">
         </div>
       </div>
     </div>
   </div>
 
-
   <div class="container block">
-    <h1 class="title">Contacts</h1>
+    <h1 class="title">Products</h1>
     <table class="table is-striped is-fullwidth">
       <tr>
         <th></th>
-        <th>First Name</th>
-        <th>Last Name</th>
+        <th v-for="f in fields">{{f[0]}}</th>
         <th></th>
       </tr>
       <tr v-for="r in rows">
-        <td>
 
-          <div v-if="!r.thumbnail">
+        <td>
+          <div>
             <p class="control">
               <div class="file is-info">
                 <label class="file-label">
@@ -63,24 +53,24 @@
               </div>
             </p>
           </div>
-
-          <img v-if="r.thumbnail" width="50" :src="r.thumbnail" />
-
+          <img v-if="r.image" width="50" :src="r.image" />
         </td>
-        <td v-for="fn in ['first_name', 'last_name']">
-          <div class="control" :class="{'is-loading': r._state[fn] === 'pending'}" >
-            <input type="text" class="input" v-model="r[fn]"
+
+        <td v-for="f in fields">
+          <div class="control" :class="{'is-loading': r._state[f[1]] === 'pending'}" >
+            <input type="text" class="input" v-model="r[f[1]]"
               :class="{
-                'is-focused': r._state[fn] === 'edit',
-                'is-static': r._state[fn] === 'clean',
+                'is-focused': r._state[f[1]] === 'edit',
+                'is-static': r._state[f[1]] === 'clean',
               }"
-              :readonly="r._state[fn] === 'clean'"
-              @click="start_edit(r._idx, fn)"
-              @blur="stop_edit(r._idx, fn)"
+              :readonly="r._state[f[1]] === 'clean'"
+              @click="start_edit(r._idx, f[1])"
+              @blur="stop_edit(r._idx, f[1])"
             />
           </div>
         </td>
-        <td><button @click="delete_contact(r._idx)" class="button is-danger">
+
+        <td><button @click="delete_product(r._idx)" class="button is-danger">
           <i class="fa fa-trash"></i></button></td>
       </tr>
     </table>

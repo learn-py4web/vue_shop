@@ -7,11 +7,17 @@ let app = {};
 // creates a Vue instance, and then initializes the Vue instance.
 let init = (app) => {
 
+
     // This is the Vue data.
     app.data = {
+        fields: [
+            ['Product Name', 'product_name'],
+            ['Quantity', 'quantity'],
+            ['Price', 'price'],
+            ['Description', 'description'],
+        ],
+        add_fields: null,
         add_mode: false,
-        add_first_name: "",
-        add_last_name: "",
         rows: [],
     };
 
@@ -28,25 +34,27 @@ let init = (app) => {
     // - edit : the value is being edited
     // - pending : a save is pending.
     app.decorate = (a) => {
-        a.map((e) => {e._state = {first_name: "clean", last_name: "clean"} ;});
+        for (e of a) {
+            e._state = {}
+            for (f of app.vue.fields) {
+                e._state[f[1]] = "clean";
+            }
+        }
         return a;
     }
 
     app.add_contact = function () {
-        axios.post(add_contact_url,
-            {
-                first_name: app.vue.add_first_name,
-                last_name: app.vue.add_last_name,
-            }).then(function (response) {
+        msg = {};
+        for (f of app.vue.fields) {
+            msg[f[1]] = app.vue.add_fields[f[1]];
+        }
+        axios.post(add_contact_url, m).then(function (response) {
             let n = app.vue.rows.length;
             app.vue.rows.push();
-            let new_row = {
-                id: response.data.id,
-                first_name: app.vue.add_first_name,
-                last_name: app.vue.add_last_name,
-                _state: {first_name: "clean", last_name: "clean"},
-                _idx: n,
-            };
+            let new_row = msg;
+            msg.id = response.data.id;
+            msg._state = {first_name: "clean", last_name: "clean"};
+            msg._idx = n;
             app.vue.rows[n] = new_row;
             app.reset_form();
             app.set_add_status(false);
@@ -54,8 +62,9 @@ let init = (app) => {
     };
 
     app.reset_form = function () {
-        app.vue.add_first_name = "";
-        app.vue.add_last_name = "";
+        for (f of app.vue.fields) {
+            app.vue.add_fields[f[1]] = "";
+        }
     };
 
     app.delete_contact = function(row_idx) {
@@ -104,14 +113,15 @@ let init = (app) => {
             let reader = new FileReader();
             reader.addEventListener("load", function () {
                 // Sends the image to the server.
-                axios.post(upload_thumbnail_url,
+                let image = reader.result;
+                axios.post(upload_url,
                     {
-                        contact_id: row.id,
-                        thumbnail: reader.result,
+                        product_id: row.id,
+                        image: image,
                     })
                     .then(function () {
                         // Sets the local preview.
-                        row.thumbnail = reader.result;
+                        row.image = image;
 
                     });
             });
