@@ -51,14 +51,14 @@ let init = (app) => {
         axios.post(add_url, msg).then(function (response) {
             let n = app.vue.rows.length;
             app.vue.rows.push();
-            let new_row = msg;
             msg.id = response.data.id;
+            msg.image = null; // For reactivity on it.
             msg._state = {};
-            for (let of of app.vue.fields) {
+            for (let f of app.vue.fields) {
                 msg._state[f[1]] = "clean";
             }
             msg._idx = n;
-            app.vue.rows[n] = new_row;
+            app.vue.rows.push(msg);
             app.reset_form();
             app.set_add_status(false);
         });
@@ -125,7 +125,6 @@ let init = (app) => {
                     .then(function () {
                         // Sets the local preview.
                         row.image = image;
-
                     });
             });
             reader.readAsDataURL(file);
