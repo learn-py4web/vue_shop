@@ -36,7 +36,7 @@
       </tr>
       <tr v-for="r in rows">
 
-        <td>
+        <td class="is-one-fourth">
           <div>
             <p class="control">
               <div class="file is-info">
@@ -50,10 +50,12 @@
                     </span>
                   </span>
                 </label>
+                <div v-if="r.image" class="box">
+                  <img width="100" :src="r.image" />
+                </div>
               </div>
             </p>
           </div>
-          <img v-if="r.image" width="50" :src="r.image" />
         </td>
 
         <td v-for="f in fields">

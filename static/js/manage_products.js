@@ -53,7 +53,10 @@ let init = (app) => {
             app.vue.rows.push();
             let new_row = msg;
             msg.id = response.data.id;
-            msg._state = {first_name: "clean", last_name: "clean"};
+            msg._state = {};
+            for (let of of app.vue.fields) {
+                msg._state[f[1]] = "clean";
+            }
             msg._idx = n;
             app.vue.rows[n] = new_row;
             app.reset_form();
