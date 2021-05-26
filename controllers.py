@@ -72,11 +72,13 @@ def get_products():
              (db.product.description.contains(tt)))
     else:
         q = db.product.id > 0
-    products = db(q).select(db.product.ALL)
+    # This is a bit simplistic; normally you would return only some of
+    # the products... and add pagination... this is up to you to fix.
+    products = db(q).select(db.product.ALL).as_list()
     # Fixes some fields, to make it easy on the client side.
     for p in products:
-        p.desired_quantity = min(1, p.quantity)
-        p.cart_quantity = 0
+        p['desired_quantity'] = min(1, p['quantity'])
+        p['cart_quantity'] = 0
     return dict(
         products=products,
     )

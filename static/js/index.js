@@ -69,7 +69,7 @@ let init = (app) => {
     };
 
     app.update_cart = function () {
-        enumerate(app.vue.cart);
+        app.enumerate(app.vue.cart);
         let cart_size = 0;
         let cart_total = 0;
         for (let c of app.vue.cart) {
@@ -180,9 +180,10 @@ let init = (app) => {
 
     // And this initializes it.
     app.init = () => {
-        // Put here any initialization code.
-        // Typically this is a server GET call to load the data.
+        // Load the products...
         app.vue.get_products();
+        // .. and the cart.
+        app.read_cart();
     };
 
     // Call to the initializer.
