@@ -1,0 +1,104 @@
+[[extend 'layout.html']]
+
+<style>
+[v-cloak] {
+     display: none;
+}
+</style>
+
+<div class="section" id="vue-target" v-cloak>
+
+  <div v-if="add_mode" class="container block">
+    <div class="title">Add Contact</div>
+    <div class="form">
+
+      <!-- This looks like a form, but is not.  We just need the inputs. -->
+      <div class="field">
+        <label class="label">First Name:</label>
+        <div class="control">
+          <input type="text" v-model="add_first_name" class="input">
+        </div>
+      </div>
+      <div class="field">
+        <label class="label">Last Name:</label>
+        <div class="control">
+          <input type="text" v-model="add_last_name" class="input">
+        </div>
+      </div>
+      <div class="field">
+        <div class="control">
+          <input type="submit" @click="add_contact" value="Add" class="button is-primary">
+          <input type="submit" @click="set_add_status(false)" value="Cancel" class="button is-warning">
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <div class="container block">
+    <h1 class="title">Contacts</h1>
+    <table class="table is-striped is-fullwidth">
+      <tr>
+        <th></th>
+        <th>First Name</th>
+        <th>Last Name</th>
+        <th></th>
+      </tr>
+      <tr v-for="r in rows">
+        <td>
+
+          <div v-if="!r.thumbnail">
+            <p class="control">
+              <div class="file is-info">
+                <label class="file-label">
+                  <input class="file-input" type="file"
+                         accept=".jpg, .png, .jpeg, .gif, .bmp, .tif, .tiff|image/*"
+                         @change="upload_file($event, r._idx)">
+                  <span class="file-cta">
+                    <span class="file-label">
+                      <span><i class="fa fa-upload"></i></span>
+                    </span>
+                  </span>
+                </label>
+              </div>
+            </p>
+          </div>
+
+          <img v-if="r.thumbnail" width="50" :src="r.thumbnail" />
+
+        </td>
+        <td v-for="fn in ['first_name', 'last_name']">
+          <div class="control" :class="{'is-loading': r._state[fn] === 'pending'}" >
+            <input type="text" class="input" v-model="r[fn]"
+              :class="{
+                'is-focused': r._state[fn] === 'edit',
+                'is-static': r._state[fn] === 'clean',
+              }"
+              :readonly="r._state[fn] === 'clean'"
+              @click="start_edit(r._idx, fn)"
+              @blur="stop_edit(r._idx, fn)"
+            />
+          </div>
+        </td>
+        <td><button @click="delete_contact(r._idx)" class="button is-danger">
+          <i class="fa fa-trash"></i></button></td>
+      </tr>
+    </table>
+    <button @click="set_add_status(true)" class="button is-primary">
+      <i class="fa fa-plus fa-fw"></i> Add Person
+    </button>
+  </div>
+
+</div>
+
+
+[[block page_scripts]]
+<script>
+  let load_url = "[[=XML(load_url)]]";
+  let add_url = "[[=XML(add_url)]]";
+  let delete_url = "[[=XML(delete_url)]]";
+  let edit_url = "[[=XML(edit_url)]]";
+  let upload_url = "[[=XML(upload_url)]]";
+</script>
+<script src="js/manage_products.js"></script>
+[[end]]

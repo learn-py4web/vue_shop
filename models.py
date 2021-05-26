@@ -13,11 +13,21 @@ def get_user_email():
 def get_time():
     return datetime.datetime.utcnow()
 
+# Product table.
+db.define_table('product',
+    Field('product_name'),
+    Field('quantity', 'integer'),
+    Field('price', 'float'),
+    Field('image', 'text'), # Data URL for the image.
+    Field('description', 'text'),
+)
+db.product.id.readable = db.product.id.writable = False
 
-### Define your table below
-#
-# db.define_table('thing', Field('name'))
-#
-## always commit your models to avoid problems later
+db.define_table('customer_order',
+    Field('order_date', default=get_time),
+    Field('customer_info', 'blob'),
+    Field('transaction_token', 'blob'),
+    Field('cart', 'blob'),
+)
 
 db.commit()
