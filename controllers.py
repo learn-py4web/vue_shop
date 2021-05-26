@@ -54,7 +54,7 @@ with open(os.path.join(APP_FOLDER, 'private', 'stripe_keys.json'), 'r') as f:
     STRIPE_KEY_INFO = json.load(f)
 
 @action('index')
-@action.uses(db, auth, 'index.html')
+@action.uses(db, url_signer, 'index.html')
 def index():
     return dict(
         products_url = URL('get_products', signer=url_signer),
@@ -122,7 +122,7 @@ def view_orders(path=None):
     return dict(grid=grid)
 
 @action('manage_products')
-@action.uses(db, 'manage_products.html')
+@action.uses(db, url_signer, 'manage_products.html')
 def manage_products():
     return dict(
         # This is the signed URL for the callback.
@@ -136,7 +136,7 @@ def manage_products():
 # This is our very first API function.
 @action('load_products')
 @action.uses(url_signer.verify(), db)
-def load_contacts():
+def load_products():
     rows = db(db.product).select().as_list()
     return dict(rows=rows)
 
@@ -173,7 +173,7 @@ def edit_product():
 def upload_image():
     product_id = request.json.get("product_id")
     image = request.json.get("image")
-    db(db.contact.id == product_id).update(image=image)
+    db(db.product.id == product_id).update(image=image)
     return "ok"
 
 
