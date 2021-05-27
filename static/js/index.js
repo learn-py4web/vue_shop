@@ -65,17 +65,15 @@ let init = (app) => {
     app.inc_desired_quantity = function(product_idx, qty) {
         // Inc and dec to desired quantity.
         let p = app.vue.products[product_idx];
-        p.desired_quantity = Math.max(0, p.desired_quantity + qty);
-        p.desired_quantity = Math.min(p.quantity, p.desired_quantity);
+        p.desired_quantity = Math.max(0,
+            Math.min(p.quantity, p.desired_quantity + qty));
     };
 
     app.inc_cart_quantity = function(product_idx, qty) {
         // Inc and dec to desired quantity.
         let p = app.vue.cart[product_idx];
-        p.cart_quantity = Math.max(0, p.cart_quantity + qty);
-        p.cart_quantity = Math.min(p.quantity, p.cart_quantity);
-        app.update_cart();
-        app.store_cart();
+        p.cart_quantity = Math.max(0,
+            Math.min(p.quantity, p.cart_quantity + qty));
     };
 
     app.update_cart = function () {
@@ -93,12 +91,15 @@ let init = (app) => {
         );
     };
 
+    app.clear_cart = function () {
+        app.vue.cart = [];
+        app.update_cart();
+        app.store_cart();
+        app.goto('prod');
+    };
+
     app.buy_product = function(product_idx) {
         let p = app.vue.products[product_idx];
-        // Bounds the desired quantity.
-        let q = Math.max(0, Math.min(p.quantity, p.desired_quantity));
-        // Decreases the amount in stock.
-        p.quantity -= q;
         // I need to put the product in the cart.
         // Check if it is already there.
         let already_present = false;
@@ -111,9 +112,11 @@ let init = (app) => {
         }
         // If it's there, increment the quantity; otherwise, insert it.
         if (already_present) {
-            app.vue.cart[found_idx].cart_quantity += q;
+            let cp = app.vue.cart[found_idx];
+            cp.cart_quantity = Math.max(0,
+                Math.min(p.quantity, cp.cart_quantity + p.cart_quantity));
         } else {
-            p.cart_quantity = q;
+            p.cart_quantity = p.desired_quantity;
             app.vue.cart.push(p);
         }
         // Updates the amount of products in the cart.
@@ -196,6 +199,7 @@ let init = (app) => {
         buy_product: app.buy_product,
         do_search: app.get_products,
         clear_search: app.clear_search,
+        clear_cart: app.clear_cart,
         pay: app.pay,
         checkout: app.checkout,
     };
