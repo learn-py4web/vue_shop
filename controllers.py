@@ -34,9 +34,11 @@ from py4web import action, request, abort, redirect, URL
 from yatl.helpers import A
 from .common import db, session, T, cache, auth, logger, authenticated, unauthenticated, flash
 from py4web.utils.url_signer import URLSigner
-from py4web.utils.grid import Grid
 from .models import get_user_email
 from .settings import APP_FOLDER
+
+from py4web.utils.form import Form, FormStyleBulma
+from py4web.utils.grid import Grid, GridClassStyleBulma
 
 import stripe
 
@@ -160,6 +162,8 @@ def view_orders(path=None):
     grid = Grid(path,
                 query=reduce(lambda a, b: (a & b), [db.customer_order.id > 0]),
                 orderby=[db.customer_order.id],
+                grid_class_style=GridClassStyleBulma,
+                formstyle=FormStyleBulma,
                 )
     return dict(grid=grid)
 
