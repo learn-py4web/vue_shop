@@ -65,7 +65,8 @@ def full_url(u):
 def index():
     return dict(
         products_url = URL('get_products', signer=url_signer),
-        purchase_url = URL('purchase', signer=url_signer),
+        checkout_url = URL('checkout', signer=url_signer),
+        pay_url = URL('pay', signer=url_signer),
         clear_cart = 'true' if request.params.get('clear_cart') else 'false',
         stripe_key = STRIPE_KEY_INFO['test_public_key'],
     )
@@ -92,36 +93,63 @@ def get_products():
         products=products,
     )
 
-@action('purchase', method="POST")
-@action.uses(db, url_signer.verify())
-def purchase():
-    # See https://stripe.com/docs/payments/checkout/migration#api-products
-    items = request.json.get('items')
-    total = 0
+def check_enough(items):
+    have_enough = True
     for it in items:
-        total += it['quantity']
-    assert total > 0 # Just to check
+        # I look up the product; I don't trust the user to tell me the cost.
+        p = db.product(it['product_id'])
+        if p is None:
+            have_enough = False
+            break
+        # Checks if I have enough.  If not, stop.
+        if p.quantity < it['quantity']:
+            have_enough = False
+            break
+    return have_enough
+
+@action('checkout', method="POST")
+@action.uses(db, url_signer.verify())
+def checkout():
+    """Checks that we have enough items in stock."""
+    items = request.json.get('items')
+    return dict(ok=check_enough(items))
+
+@action('pay', method="POST")
+@action.uses(db, url_signer.verify())
+def pay():
+    """Checks (again) that we have enough items in stock, builds the Stripe
+    checkout sessions, and returns its id."""
+    items = request.json.get('items')
+    fulfillment = request.json.get('fulfillment')
+    if not check_enough(items):
+        return dict(ok=False)
+    # TODO: Normally here I would validate the fulfillment info.
+    # See https://stripe.com/docs/payments/checkout/migration#api-products
     # Insert non-paid order (the customer has not checked out yet).
     line_items = []
     for it in items:
         # I look up the product; I don't trust the user to tell me the cost.
         p = db.product(it['product_id'])
-        if p is not None:
-            line_item = {
-                'quantity': int(it['quantity']),
-                'price_data': {
-                    'currency': 'usd',
-                    'unit_amount': int(p.price * 100), # Stripe wants int.
-                    'product_data': {
-                        'name': p.product_name,
-                        # 'images': p.image, # Cannot provide a data URL here, too bad.
-                    }
+        # I decrement the quantity, as it is now on reserve. I may have to
+        # periodically check the uncompleted orders that are old ("abandoned")
+        # to recover committed, unclaimed quantity.
+        p.quantity -= int(it['quantity'])
+        p.update_record()
+        line_item = {
+            'quantity': int(it['quantity']),
+            'price_data': {
+                'currency': 'usd',
+                'unit_amount': int(p.price * 100), # Stripe wants int.
+                'product_data': {
+                    'name': p.product_name,
+                    # 'images': p.image, # Cannot provide a data URL here, too bad.
                 }
             }
+        }
         line_items.append(line_item)
     order_id = db.customer_order.insert(
         ordered_items=json.dumps(items),
-        # TODO: normally one would add also customer information.
+        fulfillment=json.dumps(fulfillment),
     )
     stripe_session = stripe.checkout.Session.create(
         payment_method_types=['card'],
@@ -130,7 +158,8 @@ def purchase():
         success_url=full_url(URL('successful_payment', order_id, signer=url_signer)),
         cancel_url=full_url(URL('cancelled_payment', order_id, signer=url_signer)),
     )
-    return dict(session_id=stripe_session.id)
+    return dict(ok=True,
+                session_id=stripe_session.id)
 
 @action('successful_payment/<order_id:int>')
 @action.uses(url_signer.verify())

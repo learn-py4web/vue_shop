@@ -2,7 +2,6 @@
 // and be used to initialize it.
 let app = {};
 
-
 // Given an empty app object, initializes it filling its attributes,
 // creates a Vue instance, and then initializes the Vue instance.
 let init = (app) => {
@@ -15,15 +14,23 @@ let init = (app) => {
         cart_size: 0,
         cart_total: 0,
         page: 'prod', // Page : cart or prod.
-        checkout_state: 'pay', // 'pay' or 'checkout'
+        checkout_state: 'checkout', // checkout, then pay.
+        fulfillment: {name: "", address: ""}, // This is just an example
     };
 
     app.stripe_session_id = null;
+    app.items = []; // List of items one is checking out.
 
-    app.enumerate = (a) => {
+    app.annotate = (a) => {
         // This adds an _idx field to each element of the array.
         let k = 0;
-        a.map((e) => {e._idx = k++;});
+        a.map((e) => {
+            e._idx = k++;
+            e.fprice = e.price.toLocaleString(
+                undefined, { minimumFractionDigits: 2,
+                    maximumFractionDigits: 2 }
+            );
+        });
         return a;
     };
 
@@ -31,7 +38,7 @@ let init = (app) => {
         // Gets products in response to page load or query.
         axios.get(products_url, {params: {q: app.vue.product_search}})
             .then(function (r) {
-                app.vue.products = app.enumerate(r.data.products);
+                app.vue.products = app.annotate(r.data.products);
             });
     };
 
@@ -72,7 +79,7 @@ let init = (app) => {
     };
 
     app.update_cart = function () {
-        app.enumerate(app.vue.cart);
+        app.annotate(app.vue.cart);
         let cart_size = 0;
         let cart_total = 0;
         for (let c of app.vue.cart) {
@@ -80,11 +87,18 @@ let init = (app) => {
             cart_total += c.cart_quantity * c.price;
         }
         app.vue.cart_size = cart_size;
-        app.vue.cart_total = cart_total;
+        app.vue.cart_total = (cart_total).toLocaleString(
+            undefined, { minimumFractionDigits: 2,
+                maximumFractionDigits: 2 }
+        );
     };
 
     app.buy_product = function(product_idx) {
         let p = app.vue.products[product_idx];
+        // Bounds the desired quantity.
+        let q = Math.max(0, Math.min(p.quantity, p.desired_quantity));
+        // Decreases the amount in stock.
+        p.quantity -= q;
         // I need to put the product in the cart.
         // Check if it is already there.
         let already_present = false;
@@ -97,9 +111,9 @@ let init = (app) => {
         }
         // If it's there, increment the quantity; otherwise, insert it.
         if (already_present) {
-            app.vue.cart[found_idx].cart_quantity += p.desired_quantity;
+            app.vue.cart[found_idx].cart_quantity += q;
         } else {
-            p.cart_quantity = p.desired_quantity;
+            p.cart_quantity = q;
             app.vue.cart.push(p);
         }
         // Updates the amount of products in the cart.
@@ -113,30 +127,65 @@ let init = (app) => {
         app.vue.page = page;
     };
 
-    app.pay = function () {
-        items = []
+    app.checkout = function () {
+        // Checkout is the first stage: we check that the products
+        // are still available, and we ask for fulfillment info
+        // (address, etc).  One then clicks Pay to pay.
+        app.items = [];
         for (let p of app.vue.cart) {
-            items.push({
+            app.items.push({
                 product_id: p.id,
                 quantity: p.cart_quantity,
             });
         }
-        axios.post(purchase_url, {items: items})
+        axios.post(checkout_url, {items: app.items})
             .then(function (r) {
-                app.stripe_session_id = r.data.session_id;
-                app.vue.checkout_state = "checkout";
+                if (r.data.ok) {
+                    // The server says: ok, the transaction can be performed.
+                    app.vue.checkout_state = "pay";
+                } else {
+                    // The server says: nope.  Not enough stock.
+                    // Here, you should do something more sophisticated.
+                    // For instance, have the server suggest what less to
+                    // get, or substitutions.  We leave this up to you.
+                    // For the moment, we just clear the cart.
+                    app.vue.get_products();
+                    app.vue.cart = [];
+                    app.vue.update_cart();
+                    app.vue.store_cart();
+                    Q.flash("I am sorry, somebody else bought it before you did.")
+                }
             });
     };
 
-    app.checkout = function () {
-        app.vue.checkout_state = "pay";
-        stripe = Stripe(stripe_key);
-        stripe.redirectToCheckout({
-            sessionId: app.stripe_session_id,
-        }).then(function (result) {
-             Q.flash(result.error.message);
+    app.pay = function () {
+        // When one clicks pay, this contacts the server, to store the fulfillment
+        // information and get a Stripe session id, and then redirects to Stripe.
+        axios.post(pay_url, {
+            items: app.items,
+            fulfillment: app.vue.fulfillment
+        }).then(function (r) {
+            if (r.data.ok) {
+                // The server says: ok, the transaction can be performed.
+                let stripe_session_id = r.data.session_id;
+                app.vue.checkout_state = "pay";
+                stripe = Stripe(stripe_key);
+                stripe.redirectToCheckout({
+                    sessionId: stripe_session_id,
+                }).then(function (result) {
+                    Q.flash(result.error.message);
+                });
+            } else {
+                // The server says: nope.  See above.
+                app.vue.get_products();
+                app.vue.cart = [];
+                app.vue.update_cart();
+                app.vue.store_cart();
+                Q.flash("I am sorry, somebody else bought it before you did.")
+            }
         });
     };
+
 
     // This contains all the methods.
     app.methods = {

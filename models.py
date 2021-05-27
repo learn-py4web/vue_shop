@@ -26,7 +26,10 @@ db.product.id.readable = db.product.id.writable = False
 db.define_table('customer_order',
     Field('order_date', default=get_time),
     Field('ordered_items', 'text'), # Json for simplicity
+    Field('fulfillment', 'text'), # Json for simplicity
     Field('paid', 'boolean', default=False),
+    Field('created_on', 'datetime', default=get_time),
+    Field('updated_on', 'datetime', default=get_time),
 )
 
 db.commit()

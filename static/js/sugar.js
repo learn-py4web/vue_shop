@@ -12726,7 +12726,7 @@
   /***
    * @module Range
    * @description Date, Number, and String ranges that can be manipulated and compared,
-   *              or enumerate over specific points within the range.
+   *              or annotate over specific points within the range.
    *
    ***/
 

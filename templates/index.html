@@ -58,7 +58,7 @@
         <div class="column is-three-quarters">
           <div class="has-text-weight-bold is-size-3">{{product.product_name}}</div>
           <div class="mt-2">
-            <span class="product_price">${{product.price}}</span>
+            <span class="product_price">${{product.fprice}}</span>
             <span class="product_quantity ml-5">In stock: {{product.quantity}}</span>
             <div class="buttons mt-2">
               <button class="button" @click="inc_desired_quantity(product._idx, 1)"><i class="fa fa-plus"></i></button>
@@ -98,7 +98,7 @@
         <div class="column is-three-quarters">
           <div class="has-text-weight-bold is-size-3">{{product.product_name}}</div>
           <div class="mt-2">
-            <span class="product_price">${{product.price}}</span>
+            <span class="product_price">${{product.fprice}}</span>
             <span class="product_quantity ml-5">In stock: {{product.quantity}}</span>
             <div class="buttons mt-2">
               <button class="button" @click="inc_cart_quantity(product._idx, 1)"><i class="fa fa-plus"></i></button>
@@ -116,16 +116,42 @@
     <!-- cart pay -->
   </div>
     <div v-if="cart.length > 0" class="block">
-      Your total price: $ {{cart_total}}
-      <button v-if="cart_total > 0 && checkout_state === 'pay'"
-              class="button is-success" @click="pay()">
-        <span class="icon is-small">
-          <i class="fa fa-credit-card"></i>
-        </span>
-        <span>Pay</span>
+      Your total price: ${{cart_total}}
+    </div>
+    <div class="block">
+      <!-- checkout -->
+      <button v-if="cart_total > 0 && checkout_state === 'checkout'"
+              class="button is-success" @click="checkout()">
+        <span>Checkout</span>
       </button>
-      <button v-if="checkout_state === 'checkout'"
-              class="button is-danger" @click="checkout">Complete Order</button>
+
+      <!-- pay -->
+      <div v-if="cart_total > 0 && checkout_state === 'pay'">
+        <div class="subtitle">Shipping Information</div>
+        <div class="form">
+          <div class="field">
+            <label class="label">Name:</label>
+            <div class="control">
+              <input type="text" v-model="fulfillment.name" class="input">
+            </div>
+          </div>
+          <div class="field">
+            <label class="label">Address:</label>
+            <div class="control">
+              <input type="text" v-model="fulfillment.address" class="input">
+            </div>
+          </div>
+          <div class="field">
+            <div class="control">
+              <button class="button is-link" @click="pay()">
+                <span class="icon is-small"><i class="fa fa-credit-card"></i></span>
+                <span>Pay</span>
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="mt-3">You will be redirected to Stripe to complete your payment securely.</div>
+      </div>
     </div>
   </div>
 
@@ -136,7 +162,8 @@
 <!-- Loads the index-specific js for Vue -->
 <script>
     let products_url = "[[=XML(products_url)]]";
-    let purchase_url = "[[=XML(purchase_url)]]";
+    let checkout_url = "[[=XML(checkout_url)]]";
+    let pay_url = "[[=XML(pay_url)]]";
     let stripe_key = "[[=XML(stripe_key)]]";
     let clear_cart = [[=XML(clear_cart)]];
 </script>
