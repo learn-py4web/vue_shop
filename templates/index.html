@@ -60,21 +60,18 @@
           <div class="mt-2">
             <span class="product_price">${{product.price}}</span>
             <span class="product_quantity ml-5">In stock: {{product.quantity}}</span>
-            <div class="buttons">
+            <div class="buttons mt-2">
               <button class="button" @click="inc_desired_quantity(product._idx, 1)"><i class="fa fa-plus"></i></button>
-              <button class="button is-active is-hoverable">
+              <button class="button is-selected is-hoverable">
                 {{product.desired_quantity}}
               </button>
               <button class="button" @click="inc_desired_quantity(product._idx, -1)"><i class="fa fa-minus"></i></button>
               <button class="button is-success" @click="buy_product(product._idx)">
-                <span class="icon is-small">
-                  <i class="fa fa-shopping-cart"></i>
-                </span>
-                <span>Buy</span>
+                  <i class="fa fa-arrow-right"></i><i class="fa fa-lg fa-shopping-cart"></i>
               </button>
             </div>
           </div>
-          <div class="product_description">
+          <div class="product_description mt-4">
             <p>{{product.description}}</p>
           </div>
         </div>
@@ -101,9 +98,9 @@
         <div class="column is-three-quarters">
           <div class="has-text-weight-bold is-size-3">{{product.product_name}}</div>
           <div class="mt-2">
-            <span class="product_price">$ {{product.price}}</span>
-            <span class="product_quantity">Quantity in stock: {{product.quantity}}</span>
-            <div class="buttons">
+            <span class="product_price">${{product.price}}</span>
+            <span class="product_quantity ml-5">In stock: {{product.quantity}}</span>
+            <div class="buttons mt-2">
               <button class="button" @click="inc_cart_quantity(product._idx, 1)"><i class="fa fa-plus"></i></button>
               <button class="button is-selected is-hoverable">{{product.cart_quantity}}</button>
               <button class="button" @click="inc_cart_quantity(product._idx, -1)"><i class="fa fa-minus"></i></button>
@@ -141,7 +138,7 @@
     let products_url = "[[=XML(products_url)]]";
     let purchase_url = "[[=XML(purchase_url)]]";
     let stripe_key = "[[=XML(stripe_key)]]";
-    let clear_cart = "[[=XML(clear_cart)]]";
+    let clear_cart = [[=XML(clear_cart)]];
 </script>
 <script src="https://js.stripe.com/v3/"></script>
 <script src="js/index.js"></script>

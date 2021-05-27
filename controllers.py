@@ -63,7 +63,6 @@ def full_url(u):
 @action('index')
 @action.uses(db, url_signer, 'index.html')
 def index():
-    print(request.urlparts)
     return dict(
         products_url = URL('get_products', signer=url_signer),
         purchase_url = URL('purchase', signer=url_signer),

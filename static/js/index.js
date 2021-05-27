@@ -164,6 +164,7 @@ let init = (app) => {
         app.vue.get_products();
         // .. and the cart.
         if (clear_cart) {
+            console.log("clearing the cart");
             app.vue.cart = [];
             app.update_cart();
             app.store_cart();
