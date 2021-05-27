@@ -92,7 +92,7 @@ let init = (app) => {
         for (let c of app.vue.cart) {
             if (c.id === p.id) {
                 already_present = true;
-                found_idx = i;
+                found_idx = c._idx;
             }
         }
         // If it's there, increment the quantity; otherwise, insert it.
