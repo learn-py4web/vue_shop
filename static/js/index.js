@@ -163,7 +163,13 @@ let init = (app) => {
         // Load the products...
         app.vue.get_products();
         // .. and the cart.
-        app.read_cart();
+        if (clear_cart) {
+            app.vue.cart = [];
+            app.update_cart();
+            app.store_cart();
+        } else {
+            app.read_cart();
+        }
     };
 
     // Call to the initializer.

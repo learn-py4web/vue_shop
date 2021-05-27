@@ -65,7 +65,7 @@ def index():
     return dict(
         products_url = URL('get_products', signer=url_signer),
         purchase_url = URL('purchase', signer=url_signer),
-        clear_cart = request.params.get('clear_cart'),
+        clear_cart = 'true' if request.params.get('clear_cart') else 'false',
         stripe_key = STRIPE_KEY_INFO['test_public_key'],
     )
 
@@ -113,12 +113,11 @@ def purchase():
                     'unit_amount': int(p.price * 100), # Stripe wants int.
                     'product_data': {
                         'name': p.product_name,
-                        # 'images': p.image,
+                        # 'images': p.image, # Cannot provide a data URL here, too bad.
                     }
                 }
             }
         line_items.append(line_item)
-    print("Line items:", line_items)
     order_id = db.customer_order.insert(
         ordered_items=json.dumps(items),
         # TODO: normally one would add also customer information.
@@ -135,6 +134,7 @@ def purchase():
 @action('successful_payment/<order_id:int>')
 @action.uses(url_signer.verify())
 def successful_payment(order_id=None):
+    ## TODO: Really we shoud set up a webhook for this.  But this makes test easy.
     order = db(db.customer_order.id == int(order_id)).select().first()
     if order is None:
         redirect(URL('index'))
