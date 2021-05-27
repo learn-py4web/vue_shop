@@ -119,7 +119,6 @@ let init = (app) => {
             items.push({
                 product_id: p.id,
                 quantity: p.cart_quantity,
-                unit_price: Math.round(p.price * 100), // Stripe is in cents.
             });
         }
         axios.post(purchase_url, {items: items})
@@ -131,6 +130,7 @@ let init = (app) => {
 
     app.checkout = function () {
         app.vue.checkout_state = "pay";
+        stripe = Stripe(stripe_key);
         stripe.redirectToCheckout({
             sessionId: app.stripe_session_id,
         }).then(function (result) {

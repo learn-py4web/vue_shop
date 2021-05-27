@@ -54,13 +54,19 @@ with open(os.path.join(APP_FOLDER, 'private', 'stripe_keys.json'), 'r') as f:
     STRIPE_KEY_INFO = json.load(f)
 stripe.api_key = STRIPE_KEY_INFO['test_private_key']
 
+def full_url(u):
+    p = request.urlparts
+    return p.scheme + "://" + p.netloc + u
+
 @action('index')
 @action.uses(db, url_signer, 'index.html')
 def index():
+    print(request.urlparts)
     return dict(
         products_url = URL('get_products', signer=url_signer),
         purchase_url = URL('purchase', signer=url_signer),
-        clear_cart = request.params.get('clear_cart')
+        clear_cart = request.params.get('clear_cart'),
+        stripe_key = STRIPE_KEY_INFO['test_public_key'],
     )
 
 @action('get_products')
@@ -92,26 +98,37 @@ def purchase():
     items = request.json.get('items')
     total = 0
     for it in items:
-        total += it['quantity'] * it['unit_price']
-    assert total > 0
+        total += it['quantity']
+    assert total > 0 # Just to check
     # Insert non-paid order (the customer has not checked out yet).
+    line_items = []
+    for it in items:
+        # I look up the product; I don't trust the user to tell me the cost.
+        p = db.product(it['product_id'])
+        if p is not None:
+            line_item = {
+                'quantity': int(it['quantity']),
+                'price_data': {
+                    'currency': 'usd',
+                    'unit_amount': int(p.price * 100), # Stripe wants int.
+                    'product_data': {
+                        'name': p.product_name,
+                        # 'images': p.image,
+                    }
+                }
+            }
+        line_items.append(line_item)
+    print("Line items:", line_items)
     order_id = db.customer_order.insert(
         ordered_items=json.dumps(items),
         # TODO: normally one would add also customer information.
     )
     stripe_session = stripe.checkout.Session.create(
-      payment_method_types=['card'],
-      line_items=[{
-        'price_data': {
-          'product': 'Thank you for your purchase',
-          'unit_amount': total,
-          'currency': 'usd',
-        },
-        'quantity': 1,
-      }],
-      mode='payment',
-      success_url=URL('successful_payment', order_id, signer=url_signer),
-      cancel_url=URL('cancelled_payment', order_id, signer=url_signer),
+        payment_method_types=['card'],
+        line_items=line_items,
+        mode='payment',
+        success_url=full_url(URL('successful_payment', order_id, signer=url_signer)),
+        cancel_url=full_url(URL('cancelled_payment', order_id, signer=url_signer)),
     )
     return dict(session_id=stripe_session.id)
 
