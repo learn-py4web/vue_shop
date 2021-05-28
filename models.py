@@ -29,7 +29,7 @@ db.define_table('customer_order',
     Field('fulfillment', 'text'), # Json for simplicity
     Field('paid', 'boolean', default=False),
     Field('created_on', 'datetime', default=get_time),
-    Field('updated_on', 'datetime', default=get_time),
+    Field('updated_on', 'datetime', update=get_time),
 )
 
 db.commit()
