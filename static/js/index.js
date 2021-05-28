@@ -49,13 +49,18 @@ let init = (app) => {
 
     app.store_cart = function () {
         // Stores the cart in the local storage.
-        localStorage.cart = JSON.stringify(app.vue.cart);
+        localStorage[app_name] = JSON.stringify({cart: app.vue.cart});
     };
 
     app.read_cart = function() {
         // Reads cart from local storage.
-        if (localStorage.cart) {
-            app.vue.cart = JSON.parse(localStorage.cart);
+        if (localStorage[app_name]) {
+            try {
+                app.vue.cart = JSON.parse(localStorage[app_name]).cart;
+            } catch (error) {
+                console.error(error);
+                app.vue.cart = [];
+            }
         } else {
             app.vue.cart = [];
         }

@@ -40,8 +40,8 @@
         </button>
       </span>
       <span v-if="page==='cart'">
-        <button class="button is-danger" v-on:click="clear_cart()"> Clear cart </button>
-        <button class="button is-success" v-on:click="goto('prod')"> Continue shopping </button>
+        <button class="button is-danger" @click="clear_cart()"> Clear cart </button>
+        <button class="button is-success" @click="goto('prod')"> Continue shopping </button>
       </span>
     </div>
 
@@ -167,6 +167,7 @@
     let pay_url = "[[=XML(pay_url)]]";
     let stripe_key = "[[=XML(stripe_key)]]";
     let clear_cart = [[=XML(clear_cart)]];
+    let app_name = "[[=XML(app_name)]]";
 </script>
 <script src="https://js.stripe.com/v3/"></script>
 <script src="js/index.js"></script>

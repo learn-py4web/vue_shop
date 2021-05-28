@@ -25,6 +25,7 @@ session, db, T, auth, and tempates are examples of Fixtures.
 Warning: Fixtures MUST be declared with @action.uses({fixtures}) else your app will result in undefined behavior
 """
 
+import datetime
 from functools import reduce
 import json
 import os
@@ -35,7 +36,7 @@ from yatl.helpers import A
 from .common import db, session, T, cache, auth, logger, authenticated, unauthenticated, flash
 from py4web.utils.url_signer import URLSigner
 from .models import get_user_email
-from .settings import APP_FOLDER
+from .settings import APP_FOLDER, APP_NAME
 
 from py4web.utils.form import Form, FormStyleBulma
 from py4web.utils.grid import Grid, GridClassStyleBulma
@@ -69,6 +70,7 @@ def index():
         pay_url = URL('pay', signer=url_signer),
         clear_cart = 'true' if request.params.get('clear_cart') else 'false',
         stripe_key = STRIPE_KEY_INFO['test_public_key'],
+        app_name = APP_NAME,
     )
 
 @action('get_products')
@@ -169,6 +171,7 @@ def successful_payment(order_id=None):
     if order is None:
         redirect(URL('index'))
     order.paid = True
+    order.paid_on = datetime.datetime.utcnow()
     order.update_record()
     redirect(URL('index', vars=dict(clear_cart='y')))
 
