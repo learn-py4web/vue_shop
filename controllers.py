@@ -62,7 +62,7 @@ def full_url(u):
     return p.scheme + "://" + p.netloc + u
 
 @action('index')
-@action.uses(db, url_signer, 'index.html')
+@action.uses('index.html', db, url_signer)
 def index():
     return dict(
         products_url = URL('get_products', signer=url_signer),
@@ -186,7 +186,7 @@ def cancelled_payment(order_id=None):
 
 @action('view_orders', method=['POST', 'GET'])
 @action('view_orders/<path:path>', method=['POST', 'GET'])
-@action.uses(db, auth, session, 'view_orders.html')
+@action.uses('view_orders.html', db, auth, session)
 def view_orders(path=None):
     """In a realistic example, here you should check that the person is
         authorized to view the orders."""
@@ -199,7 +199,7 @@ def view_orders(path=None):
     return dict(grid=grid)
 
 @action('manage_products')
-@action.uses(db, url_signer, 'manage_products.html')
+@action.uses('manage_products.html', db, url_signer)
 def manage_products():
     return dict(
         # This is the signed URL for the callback.
